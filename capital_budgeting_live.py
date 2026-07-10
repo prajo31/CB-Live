@@ -1,6 +1,6 @@
 # capital_budgeting_app.py
 # Multi-page Streamlit app – Retail Store Capital Budgeting Lab
-# Live data + WACC + NPV + IRR + MIRR + Sensitivity + Tornado + Fallback modes
+# Live data + WACC + NPV + IRR (safe) + MIRR + Sensitivity + Tornado + Fallback modes
 
 import math
 import numpy as np
@@ -213,9 +213,12 @@ def compute_wacc(beta, rf, rm, tax_rate, debt_ratio, cost_of_debt):
 def npv(rate, cash_flows):
     return sum(cf / ((1 + rate) ** t) for t, cf in enumerate(cash_flows))
 
-def irr(cash_flows):
+def safe_irr(cf):
+    # IRR requires CF0 < 0 and at least one positive CF later
+    if len(cf) < 2 or cf[0] >= 0 or not any(x > 0 for x in cf[1:]):
+        return float("nan")
     try:
-        return np.irr(cash_flows)
+        return np.irr(cf)
     except:
         return float("nan")
 
@@ -379,10 +382,11 @@ elif page.startswith("2"):
     else:
         fcf_list = manual_cf_list
 
+    # FULL cash-flow series including CF0
     full_cf = [initial_investment] + fcf_list[:-1] + [fcf_list[-1] + salvage_value]
 
     project_npv = npv(discount_rate, full_cf)
-    project_irr = irr(full_cf)
+    project_irr = safe_irr(full_cf)
     project_mirr = mirr(full_cf, discount_rate, discount_rate)
     project_payback = payback_period(full_cf)
     profitability_index = project_npv / abs(full_cf[0]) if full_cf[0] != 0 else float("nan")
@@ -391,13 +395,16 @@ elif page.startswith("2"):
     with col_r1:
         st.metric("NPV", f"${project_npv:,.0f}")
     with col_r2:
-        st.metric("IRR", f"{project_irr:.2%}")
+        st.metric("IRR", f"{project_irr:.2%}" if not math.isnan(project_irr) else "NaN")
     with col_r3:
         st.metric("MIRR", f"{project_mirr:.2%}")
     with col_r4:
         st.metric("Payback", f"{project_payback:.2f}" if not math.isinf(project_payback) else "No payback")
     with col_r5:
         st.metric("Profitability Index", f"{profitability_index:.2f}")
+
+    if math.isnan(project_irr):
+        st.warning("IRR cannot be computed because cash flows do not contain a valid sign change (CF0 must be negative and at least one future CF positive).")
 
     cf_df = pd.DataFrame({"Year": range(0, project_years + 1), "Cash Flow": full_cf})
     st.markdown("### Cash Flow Timeline")
@@ -412,6 +419,7 @@ elif page.startswith("2"):
     st.session_state["base_rev"] = base_rev
     st.session_state["op_margin"] = op_margin
     st.session_state["capex_ratio"] = capex_ratio
+    st.session_state["project_cf"] = project_cf
 
 # -----------------------------
 # Page 3 – Sensitivity & Tornado
@@ -430,6 +438,7 @@ elif page.startswith("3"):
         base_rev = st.session_state["base_rev"]
         op_margin = st.session_state["op_margin"]
         capex_ratio = st.session_state["capex_ratio"]
+        project_cf = st.session_state["project_cf"]
 
         st.subheader("Discount Rate & Cash Flow Sensitivity")
 
