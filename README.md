@@ -1,27 +1,20 @@
 # CB-Live
-# Capital Budgeting Lab (Streamlit + Live Data + MIRR + Real Rates)
+# Retail Store Capital Budgeting Lab (Streamlit + Live Data)
 
-Interactive capital budgeting app for teaching and student experimentation.
+Interactive capital budgeting app for a **new retail store project** using **live company data**.
 
 ## Features
 
-- Real risk-free rate (10-year Treasury)
-- Real market return (S&P 500 annualized)
-- Live company data via Yahoo Finance
-- WACC calculation using CAPM
-- Capital budgeting model:
-  - NPV
-  - IRR
-  - MIRR
-  - Payback period
-  - Profitability index
-- Sensitivity analysis:
-  - Discount rate range
-  - Cash flow shocks
+- Auto-estimated project cash flows from company financials (revenue, margins, CAPEX, depreciation, working capital)
+- Real risk-free rate (10-year Treasury, ^TNX)
+- Real market return (S&P 500, ^GSPC)
+- WACC via CAPM
+- NPV, IRR, MIRR, Payback period, Profitability index
+- Sensitivity analysis (discount rate, cash flow shocks)
 - Tornado chart for key variable sensitivity
 - CSV download of cash flows and results
 
-## How to run locally
+## Run locally
 
 ```bash
 pip install -r requirements.txt
